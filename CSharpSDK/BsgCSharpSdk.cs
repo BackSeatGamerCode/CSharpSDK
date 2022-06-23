@@ -1,20 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using CSharpSDK.Events;
 using CSharpSDK.Models;
+using Newtonsoft.Json;
 
 namespace CSharpSDK
 {
-    public class BsgCSharpSdk
+    public abstract class BsgCSharpSdk
     {
-        protected Queue<Redemption> Redemptions = new Queue<Redemption>();
-        private const int PORT = 29175;
+        protected readonly Queue<Redemption> EventQueue = new Queue<Redemption>();
+        private const int Port = 29175;
+        private Thread _listenThread;
 
         public void Start()
         {
-            Listen();
+            _listenThread = new Thread(Listen)
+            {
+                Name = "BSG TCP/IP Server",
+                IsBackground = true
+                
+            };
+            _listenThread.Start();
         }
         
         private void Listen()
@@ -27,7 +38,7 @@ namespace CSharpSDK
 
                 try
                 {
-                    var localEndPoint = new IPEndPoint(ipAddress, PORT);
+                    var localEndPoint = new IPEndPoint(ipAddress, Port);
 
                     listener.Bind(localEndPoint);
                     listener.Listen(10);
@@ -48,16 +59,19 @@ namespace CSharpSDK
                             break;
                         
                         data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                        
                         if (data.IndexOf("\n", StringComparison.Ordinal) <= -1) continue;
                         
-                        Console.WriteLine("Text received : {0}", data);
+                        var redemption = JsonConvert.DeserializeObject<Redemption>(data);
+                        if (redemption != null)
+                        {
+                            EventQueue.Enqueue(redemption);
+                        }
                         
                         handler.Send(new byte[] {0xD});
                         data = null;
                     }
                 }
-                catch (Exception)
+                catch (IOException)
                 {
                     // ignored
                 }
@@ -68,5 +82,18 @@ namespace CSharpSDK
                 }
             }
         }
+        
+        public void Poll(params object[] args)
+        {
+            if (EventQueue.Count == 0) return;
+            
+            var redemption = EventQueue.Dequeue();
+            OnRedemptionReceived(redemption, args);
+            GetEvent(redemption).Execute(args);
+        }
+        
+        protected abstract void OnRedemptionReceived(Redemption redemption, params object[] args);
+
+        protected abstract BaseEvent GetEvent(Redemption redemption);
     }
 }

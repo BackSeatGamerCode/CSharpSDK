@@ -1,7 +1,7 @@
 ﻿namespace CSharpSDK.Events
 {
-    public class BaseEvent
+    public abstract class BaseEvent
     {
-        
+        public abstract void Execute(params object[] args);
     }
 }
