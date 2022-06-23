@@ -54,26 +54,30 @@ namespace CSharpSDK
                     {
                         var bytes = new byte[1024];
                         var bytesRec = handler.Receive(bytes);
-                        
+
                         if (bytesRec == 0)
                             break;
-                        
+
                         data += Encoding.ASCII.GetString(bytes, 0, bytesRec);
                         if (data.IndexOf("\n", StringComparison.Ordinal) <= -1) continue;
-                        
+
                         var redemption = JsonConvert.DeserializeObject<Redemption>(data);
                         if (redemption != null)
                         {
                             EventQueue.Enqueue(redemption);
                         }
-                        
+
                         handler.Send(new byte[] {0xD});
                         data = null;
                     }
                 }
-                catch (IOException)
+                catch (SocketException)
                 {
                     // ignored
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
                 finally
                 {
