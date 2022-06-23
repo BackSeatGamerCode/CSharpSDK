@@ -25,7 +25,7 @@
                    '}';
         }
         
-        public string toMessage() {
+        public string ToMessage() {
             return guest + " has redeemed the reward " + name;
         }
 

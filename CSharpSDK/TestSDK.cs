@@ -8,7 +8,7 @@ namespace CSharpSDK
     {
         protected override void OnRedemptionReceived(Redemption redemption, params object[] args)
         {
-            Console.WriteLine(redemption.toMessage());
+            Console.WriteLine(redemption.ToMessage());
         }
 
         protected override BaseEvent GetEvent(Redemption redemption)
