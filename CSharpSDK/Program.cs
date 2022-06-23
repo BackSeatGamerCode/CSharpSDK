@@ -9,7 +9,7 @@
 
             while (true)
             {
-                testSdk.Poll(5, true, "1234");
+                testSdk.Poll();
             }
         }
     }
